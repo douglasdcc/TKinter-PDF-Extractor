@@ -21,21 +21,16 @@ class PDFApp:
         """
         Sets up the GUI, ensuring all widgets are properly placed and styled.
         """
-        # Save the state of the text_box if it exists and is valid
         text_box_content = None
         if self.text_box is not None:
             try:
-                text_box_content = self.text_box.get(
-                    "1.0", "end-1c"
-                )  # Save the content
+                text_box_content = self.text_box.get("1.0", "end-1c")
             except tk.TclError:
                 self.text_box = None
 
-        # Clear all existing widgets to prevent duplication
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Set the window background color
         self.root.configure(bg=THEMES[self.current_theme]["background"])
 
         self.canvas = tk.Canvas(
@@ -47,7 +42,7 @@ class PDFApp:
         self.canvas.grid(columnspan=3, rowspan=3)
 
         self.set_theme_button()
-        self.set_logos("logo_nobg.png")
+        self.set_logos("images/logo_nobg.png")
         self.setup_instructions()
         self.setup_buttons()
         self.add_bottom_margin()
