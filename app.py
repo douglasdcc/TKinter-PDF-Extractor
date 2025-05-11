@@ -10,6 +10,7 @@ from themes import THEMES  # Import the themes
 class PDFApp:
     def __init__(self, root_):
         self.root = root_
+        self.root.resizable(False, False)
         self.text_box = None
         self.browse_text = tk.StringVar()
         self.clear_button_text = tk.StringVar()
@@ -117,7 +118,7 @@ class PDFApp:
 
         page_range_label = tk.Label(
             button_frame,
-            text="Page Range:",
+            text="Page Range (ex.: 1, 3-7):",
             font="Raleway",
             bg=THEMES[self.current_theme]["background"],
             fg=THEMES[self.current_theme]["text"],
