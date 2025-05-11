@@ -222,26 +222,36 @@ class PDFApp:
             except (ValueError, IndexError):
                 extracted_text = "Invalid page range or page number."
 
-            # Display the extracted text in the text box
             if self.text_box is not None:
                 self.text_box.destroy()
+
+            text_box_frame = tk.Frame(
+                self.root, bg=THEMES[self.current_theme]["background"]
+            )
+            text_box_frame.grid(
+                column=4, row=0, rowspan=5, padx=10, pady=(10, 10), sticky="nsew"
+            )
+
+            scrollbar = tk.Scrollbar(text_box_frame)
+            scrollbar.pack(side="right", fill="y")
+
             self.text_box = tk.Text(
-                self.root,
-                height=10,
+                text_box_frame,
+                height=20,
                 width=50,
                 padx=15,
                 pady=15,
+                wrap="word",
                 bg=THEMES[self.current_theme]["background"],
                 fg=THEMES[self.current_theme]["text"],
+                yscrollcommand=scrollbar.set,
             )
             self.text_box.insert(1.0, extracted_text)
-            self.text_box.tag_configure("center", justify="center")
-            self.text_box.tag_add("center", 1.0, "end")
-            self.text_box.grid(column=1, row=4)
+            self.text_box.pack(side="left", fill="both", expand=True)
+
+            scrollbar.config(command=self.text_box.yview)
 
             self.browse_text.set("Browse")
-            self.canvas.config(width=600, height=250)
-            self.canvas.grid(columnspan=3)
 
     def clear_text(self):
         """
