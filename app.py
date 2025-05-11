@@ -15,6 +15,7 @@ class PDFApp:
         self.browse_text = tk.StringVar()
         self.clear_button_text = tk.StringVar()
         self.current_theme = "light"
+        self.scrollbar = None
 
         self.setup_gui()
 
@@ -48,7 +49,7 @@ class PDFApp:
         self.setup_buttons()
         self.add_bottom_margin()
 
-        self.restore_text_box(text_box_content)
+        self.restore_text_box_and_scrollbar(text_box_content)
 
     def set_theme_button(self):
         """
@@ -175,24 +176,37 @@ class PDFApp:
         )
         bottom_margin.grid(columnspan=3, row=5)
 
-    def restore_text_box(self, text_box_content):
+    def restore_text_box_and_scrollbar(self, text_box_content):
         """
-        Restores the text_box with the given content if it exists.
+        Restores the text box, scrollbar, and copy button with the given content if it exists.
         """
         if text_box_content is not None:
+            text_box_frame = tk.Frame(
+                self.root, bg=THEMES[self.current_theme]["background"]
+            )
+            text_box_frame.grid(
+                column=4, row=0, rowspan=5, padx=10, pady=(10, 10), sticky="nsew"
+            )
+
+            self.scrollbar = tk.Scrollbar(text_box_frame)
+            self.scrollbar.pack(side="right", fill="y")
+
             self.text_box = tk.Text(
-                self.root,
-                height=10,
+                text_box_frame,
+                height=20,
                 width=50,
                 padx=15,
                 pady=15,
+                wrap="word",
                 bg=THEMES[self.current_theme]["background"],
                 fg=THEMES[self.current_theme]["text"],
+                yscrollcommand=self.scrollbar.set,
             )
+            self.text_box.pack(side="left", fill="both", expand=True)
+            self.scrollbar.config(command=self.text_box.yview)
             self.text_box.insert("1.0", text_box_content)
-            self.text_box.tag_configure("center", justify="center")
-            self.text_box.tag_add("center", "1.0", "end")
-            self.text_box.grid(column=1, row=4)
+
+            self.create_copy_button()
 
     def open_file(self):
         """
@@ -224,6 +238,10 @@ class PDFApp:
 
             if self.text_box is not None:
                 self.text_box.destroy()
+                self.text_box = None
+            if self.scrollbar is not None:
+                self.scrollbar.destroy()
+                self.scrollbar = None
 
             text_box_frame = tk.Frame(
                 self.root, bg=THEMES[self.current_theme]["background"]
@@ -232,8 +250,8 @@ class PDFApp:
                 column=4, row=0, rowspan=5, padx=10, pady=(10, 10), sticky="nsew"
             )
 
-            scrollbar = tk.Scrollbar(text_box_frame)
-            scrollbar.pack(side="right", fill="y")
+            self.scrollbar = tk.Scrollbar(text_box_frame)
+            self.scrollbar.pack(side="right", fill="y")
 
             self.text_box = tk.Text(
                 text_box_frame,
@@ -244,22 +262,71 @@ class PDFApp:
                 wrap="word",
                 bg=THEMES[self.current_theme]["background"],
                 fg=THEMES[self.current_theme]["text"],
-                yscrollcommand=scrollbar.set,
+                yscrollcommand=self.scrollbar.set,
             )
-            self.text_box.insert(1.0, extracted_text)
             self.text_box.pack(side="left", fill="both", expand=True)
 
-            scrollbar.config(command=self.text_box.yview)
+            self.scrollbar.config(command=self.text_box.yview)
+
+            self.text_box.insert(1.0, extracted_text)
+
+            copy_button = tk.Button(
+                self.root,
+                text="Copy",
+                command=self.copy_text_box_content,
+                font="Raleway",
+                bg=THEMES["light"]["primary"],
+                fg=THEMES["light"]["secondary"],
+                activebackground=THEMES["light"]["button_active"],
+                activeforeground=THEMES["light"]["secondary"],
+            )
+            copy_button.grid(column=4, row=5, pady=(5, 10), sticky="n")
 
             self.browse_text.set("Browse")
 
+    def create_copy_button(self):
+        """
+        Creates a "Copy" button below the text box to copy its content to the clipboard.
+        """
+        copy_button = tk.Button(
+            self.root,
+            text="Copy",
+            command=self.copy_text_box_content,
+            font="Raleway",
+            bg=THEMES["light"]["primary"],
+            fg=THEMES["light"]["secondary"],
+            activebackground=THEMES["light"]["button_active"],
+            activeforeground=THEMES["light"]["secondary"],
+        )
+        copy_button.grid(column=4, row=5, pady=(5, 10), sticky="n")
+
+    def copy_text_box_content(self):
+        """
+        Copies the entire content of the text box to the clipboard.
+        """
+        if self.text_box is not None:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(self.text_box.get("1.0", "end-1c"))
+            self.root.update()
+
     def clear_text(self):
         """
-        Clears the text box content.
+        Clears the text box content, hides the scrollbar, and resets the layout.
         """
         if self.text_box is not None:
             self.text_box.destroy()
-            self.canvas.config(width=600, height=300)
+            self.text_box = None
+
+        if self.scrollbar is not None:
+            self.scrollbar.destroy()
+            self.scrollbar = None
+
+        self.canvas.config(width=600, height=300)
+        self.canvas.grid(column=0, row=0, columnspan=3, rowspan=3)
+
+        for widget in self.root.grid_slaves():
+            if int(widget.grid_info()["column"]) == 4:
+                widget.destroy()
 
     def toggle_theme(self):
         """
