@@ -208,21 +208,16 @@ class PDFApp:
         if file:
             read_pdf = PyPDF2.PdfReader(file)
 
-            # Get the page range from the user input
-            page_range = (
-                self.page_range_entry.get().strip()
-            )  # Read the input from the entry field
+            page_range = self.page_range_entry.get().strip()
             extracted_text = ""
 
             try:
-                if "-" in page_range:  # Handle a range of pages
+                if "-" in page_range:
                     first_page, last_page = map(int, page_range.split("-"))
-                    for page_num in range(
-                        first_page - 1, last_page
-                    ):  # Convert to zero-based index
+                    for page_num in range(first_page - 1, last_page):
                         extracted_text += read_pdf.pages[page_num].extract_text() + "\n"
-                else:  # Handle a single page
-                    page_num = int(page_range) - 1  # Convert to zero-based index
+                else:
+                    page_num = int(page_range) - 1
                     extracted_text = read_pdf.pages[page_num].extract_text()
             except (ValueError, IndexError):
                 extracted_text = "Invalid page range or page number."
