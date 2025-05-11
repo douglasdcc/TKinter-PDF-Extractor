@@ -110,10 +110,30 @@ class PDFApp:
 
     def setup_buttons(self):
         """
-        Adds buttons for browsing and clearing text, always using light theme colors.
+        Adds buttons for browsing and clearing text, and an entry for specifying the page range.
         """
         button_frame = tk.Frame(self.root, bg=THEMES[self.current_theme]["background"])
         button_frame.grid(column=1, row=3, columnspan=2, pady=(5, 20))
+
+        page_range_label = tk.Label(
+            button_frame,
+            text="Page Range:",
+            font="Raleway",
+            bg=THEMES[self.current_theme]["background"],
+            fg=THEMES[self.current_theme]["text"],
+        )
+        page_range_label.grid(column=0, row=0, padx=(5, 0), sticky="e")
+
+        self.page_range_entry = tk.Entry(
+            button_frame,
+            font="Raleway",
+            width=10,
+            bg=THEMES[self.current_theme]["background"],
+            fg=THEMES[self.current_theme]["text"],
+        )
+        self.page_range_entry.grid(column=1, row=0, padx=5, sticky="w")
+
+        self.page_range_entry.insert(0, "1")
 
         self.browse_text.set("Browse")
         browse_button = tk.Button(
@@ -128,7 +148,7 @@ class PDFApp:
             height=2,
             width=20,
         )
-        browse_button.grid(column=0, row=0, padx=5)
+        browse_button.grid(column=0, row=1, padx=5, pady=5)
 
         self.clear_button_text.set("Clear Text")
         clear_button = tk.Button(
@@ -143,7 +163,7 @@ class PDFApp:
             height=2,
             width=20,
         )
-        clear_button.grid(column=1, row=0, padx=5)
+        clear_button.grid(column=1, row=1, padx=5, pady=5)
 
     def add_bottom_margin(self):
         """
@@ -175,7 +195,7 @@ class PDFApp:
 
     def open_file(self):
         """
-        Opens a file dialog to select a PDF file and displays its content.
+        Opens a file dialog to select a PDF file and displays its content for the specified page range.
         """
         self.browse_text.set("Loading...")
         file = askopenfile(
@@ -186,9 +206,27 @@ class PDFApp:
         )
         if file:
             read_pdf = PyPDF2.PdfReader(file)
-            page = read_pdf.pages[0]
-            page_content = page.extract_text()
 
+            # Get the page range from the user input
+            page_range = (
+                self.page_range_entry.get().strip()
+            )  # Read the input from the entry field
+            extracted_text = ""
+
+            try:
+                if "-" in page_range:  # Handle a range of pages
+                    first_page, last_page = map(int, page_range.split("-"))
+                    for page_num in range(
+                        first_page - 1, last_page
+                    ):  # Convert to zero-based index
+                        extracted_text += read_pdf.pages[page_num].extract_text() + "\n"
+                else:  # Handle a single page
+                    page_num = int(page_range) - 1  # Convert to zero-based index
+                    extracted_text = read_pdf.pages[page_num].extract_text()
+            except (ValueError, IndexError):
+                extracted_text = "Invalid page range or page number."
+
+            # Display the extracted text in the text box
             if self.text_box is not None:
                 self.text_box.destroy()
             self.text_box = tk.Text(
@@ -200,7 +238,7 @@ class PDFApp:
                 bg=THEMES[self.current_theme]["background"],
                 fg=THEMES[self.current_theme]["text"],
             )
-            self.text_box.insert(1.0, page_content)
+            self.text_box.insert(1.0, extracted_text)
             self.text_box.tag_configure("center", justify="center")
             self.text_box.tag_add("center", 1.0, "end")
             self.text_box.grid(column=1, row=4)
